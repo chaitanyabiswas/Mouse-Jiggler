@@ -17,8 +17,7 @@ Public Class MouseForm
             TimeLabel.Enabled = True
             TimeLabelValue = (TimeTrackBar.Value + 1) * 6
             Call BWOne.RunWorkerAsync()
-            'Dim newThrade As New Thread(New ThreadStart(AddressOf MonuseJuggling))
-            'newThrade.Start()
+
         Else
             TimeTrackBar.Enabled = False
             TimeLabel.Enabled = False
