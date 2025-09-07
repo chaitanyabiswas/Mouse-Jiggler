@@ -17,3 +17,41 @@
 ### It can be retrieved again by double-clicking the icon from the notification area.
 ![Notificatio Area](https://user-images.githubusercontent.com/50495096/235361661-adf6deab-416e-4571-8e10-44877e4818c8.png)
 
+## Build & run (using dotnet CLI)
+
+Open a PowerShell window in the project root (for example: `C:\temp\Git\Mouse-Jiggler`) and run the following commands.
+
+- Restore packages:
+
+```powershell
+dotnet restore
+```
+
+- Build the solution:
+
+```powershell
+dotnet build .\MouseMove.sln
+```
+
+- Run the app (from the project folder or specify the project file):
+
+```powershell
+dotnet run --project .\MouseMove.vbproj
+```
+
+- Publish a release build (produce an executable):
+
+```powershell
+dotnet publish .\MouseMove.vbproj -c Release -r win-x64 --self-contained false -o .\publish
+```
+
+- Clean build artifacts:
+
+```powershell
+dotnet clean
+```
+
+Notes:
+- Use `-r win-x64` (or `win-x86`) in `dotnet publish` to target a specific runtime.
+- If `dotnet` is not found, install the .NET SDK (matching the project's target, e.g., .NET 6) and ensure it's on your PATH.
+
