@@ -11,16 +11,22 @@ Public Class MouseForm
 
     Public TimeLabelValue As Integer
     Private Sub EnbCheckBox_CheckedChanged(sender As Object, e As EventArgs) Handles EnbCheckBox.CheckedChanged
-
         If EnbCheckBox.Checked Then
             TimeTrackBar.Enabled = True
             TimeLabel.Enabled = True
             TimeLabelValue = (TimeTrackBar.Value + 1) * 6
-            Call BWOne.RunWorkerAsync()
+            ' Only start the BackgroundWorker if it's not already running
+            If Not BWOne.IsBusy Then
+                Call BWOne.RunWorkerAsync()
+            End If
 
         Else
             TimeTrackBar.Enabled = False
             TimeLabel.Enabled = False
+            ' If the worker is running, request cancellation so it can stop promptly
+            If BWOne.IsBusy AndAlso BWOne.WorkerSupportsCancellation Then
+                BWOne.CancelAsync()
+            End If
 
         End If
     End Sub
@@ -30,6 +36,8 @@ Public Class MouseForm
         EnbCheckBox.Checked = False
         TimeTrackBar.Enabled = False
         NotifyIcon1.Visible = False
+    ' Enable cancellation support so we can stop the background worker on demand
+    BWOne.WorkerSupportsCancellation = True
 
     End Sub
 
@@ -45,9 +53,11 @@ Public Class MouseForm
         Dim y As Long
 
         ' Get current cursor position
-        Do While EnbCheckBox.Checked
+        Do While EnbCheckBox.Checked AndAlso Not BWOne.CancellationPending
             Threading.Thread.Sleep(TimeLabelValue * 1000)
 
+            ' If cancellation was requested while sleeping, exit early
+            If BWOne.CancellationPending Then Exit Do
 
             x = MousePosition.X
             y = MousePosition.Y
@@ -86,6 +96,12 @@ Public Class MouseForm
     End Sub
 
     Private Sub MouseForm_Closing(sender As Object, e As CancelEventArgs) Handles MyBase.Closing
-        BWOne.Dispose()
+        ' If the worker is running, request cancellation before disposing
+        If BWOne IsNot Nothing Then
+            If BWOne.IsBusy AndAlso BWOne.WorkerSupportsCancellation Then
+                BWOne.CancelAsync()
+            End If
+            BWOne.Dispose()
+        End If
     End Sub
 End Class
