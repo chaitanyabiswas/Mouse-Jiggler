@@ -8,6 +8,12 @@ Imports System.ComponentModel
 Public Class MouseForm
     Public MouseOn As Boolean = False
     Private Declare Function SetCursorPos Lib "user32" (ByVal x As Long, ByVal y As Long) As Long
+    Private Declare Function SetThreadExecutionState Lib "kernel32" (ByVal esFlags As UInteger) As UInteger
+
+    ' Execution state flags
+    Private Const ES_CONTINUOUS As UInteger = &H80000000UI
+    Private Const ES_SYSTEM_REQUIRED As UInteger = &H1UI
+    Private Const ES_DISPLAY_REQUIRED As UInteger = &H2UI
 
     Public TimeLabelValue As Integer
     Private Sub EnbCheckBox_CheckedChanged(sender As Object, e As EventArgs) Handles EnbCheckBox.CheckedChanged
@@ -15,6 +21,8 @@ Public Class MouseForm
             TimeTrackBar.Enabled = True
             TimeLabel.Enabled = True
             TimeLabelValue = (TimeTrackBar.Value + 1) * 6
+            ' Prevent system from sleeping
+            SetThreadExecutionState(ES_CONTINUOUS Or ES_SYSTEM_REQUIRED Or ES_DISPLAY_REQUIRED)
             ' Only start the BackgroundWorker if it's not already running
             If Not BWOne.IsBusy Then
                 Call BWOne.RunWorkerAsync()
@@ -23,6 +31,8 @@ Public Class MouseForm
         Else
             TimeTrackBar.Enabled = False
             TimeLabel.Enabled = False
+            ' Allow system to sleep again
+            SetThreadExecutionState(ES_CONTINUOUS)
             ' If the worker is running, request cancellation so it can stop promptly
             If BWOne.IsBusy AndAlso BWOne.WorkerSupportsCancellation Then
                 BWOne.CancelAsync()
@@ -36,8 +46,8 @@ Public Class MouseForm
         EnbCheckBox.Checked = False
         TimeTrackBar.Enabled = False
         NotifyIcon1.Visible = False
-    ' Enable cancellation support so we can stop the background worker on demand
-    BWOne.WorkerSupportsCancellation = True
+        ' Enable cancellation support so we can stop the background worker on demand
+        BWOne.WorkerSupportsCancellation = True
 
     End Sub
 
@@ -96,6 +106,8 @@ Public Class MouseForm
     End Sub
 
     Private Sub MouseForm_Closing(sender As Object, e As CancelEventArgs) Handles MyBase.Closing
+        ' Reset execution state to allow system to sleep
+        SetThreadExecutionState(ES_CONTINUOUS)
         ' If the worker is running, request cancellation before disposing
         If BWOne IsNot Nothing Then
             If BWOne.IsBusy AndAlso BWOne.WorkerSupportsCancellation Then
